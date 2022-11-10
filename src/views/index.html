@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="/css/fontawesome.min.css"/>
+		<link rel="stylesheet" href="/css/brands.min.css"/>
+		<link rel="stylesheet" href="/css/solid.min.css"/>
+		<link rel="stylesheet" href="/css/bootstrap.min.css"/>
+		<link rel="stylesheet" href="/css/style.css"/>
+	</head>
+	<body>
+		<div class="m-2">
+			<div class="accordion" id="accordion_games">
+				{{#dirs}}
+				<div class="accordion-item">
+					<h2 class="accordion-header" id="heading_{{id}}">
+						<button class="accordion-button accordion-button-xl collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_{{id}}" aria-expanded="false" aria-controls="collapse_{{id}}">
+							{{root}}
+						</button>
+					</h2>
+
+					<div id="collapse_{{id}}" class="accordion-collapse collapse" aria-labelledby="heading_{{id}}" data-bs-parent="#accordion_games">
+						<table class="table table-bordered table-striped m-0">
+							<tbody>
+								{{#games}}
+								<tr class="align-middle">
+									<form method="post">
+										<input type="hidden" name="filepath" value="{{filepath}}">
+										<td class="p-4 col-7 text-start">{{name}}</td>
+										<td class="col-auto text-end">{{size}}</td>
+										<td class="col-auto text-end">
+											{{#cmd_extract}}
+											<button type="submit" formaction="/extract" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+												<i class="fa-solid fa-folder-open"></i> EXTRACT
+											</button>
+											{{/cmd_extract}}
+											{{#cmd_compress}}
+											<button type="submit" formaction="/compress" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+												<i class="fa-solid fa-box"></i> COMPRESS
+											</button>
+											{{/cmd_compress}}
+											{{#cmd_decompress}}
+											<button type="submit" formaction="/decompress" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+												<i class="fa-solid fa-box-open"></i> DECOMPRESS
+											</button>
+											{{/cmd_decompress}}
+										</td>
+									</form>
+								</tr>
+								{{/games}}
+							</tbody>
+						</table>
+					</div>
+				</div>
+				{{/dirs}}
+			</div>
+		</div>
+		
+		<!-- Modal -->
+		<!--
+		<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="staticBackdropLabel">Modal title</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+					...
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						<button type="button" class="btn btn-primary">Understood</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		-->
+		
+		<script src="/js/jquery.slim.min.js"></script>
+		<script src="/js/bootstrap.min.js"></script>
+	</body>
+</html>

@@ -1,0 +1,13 @@
+version: "2"
+services:
+  docker-jwudtool-gui:
+    image: fabulosodev/docker-jwudtool-gui:latest
+    container_name: docker-jwudtool-gui
+    environment:
+      - DATA_DIRECTORY=/data
+      - COMMON_KEY=1234567890
+    restart: unless-stopped
+    ports:
+      - 7878:7878
+    volumes:
+      - ./data:/data
