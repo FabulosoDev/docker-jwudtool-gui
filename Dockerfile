@@ -3,15 +3,15 @@ FROM node:16.17-alpine as build
 WORKDIR /node
 
 COPY package.json package.json
+
 RUN npm install
 
-FROM node:16.17-alpine
+FROM alpine:3.16
 
-RUN apk --no-cache add openjdk8-jre
-RUN apk --no-cache add curl
+RUN apk add --update nodejs openjdk8-jre
 
 COPY --from=build /node /
 COPY src src
 COPY jwudtool jwudtool
 
-CMD ["npm", "start"]
+CMD ["node", "src/app.js"]
