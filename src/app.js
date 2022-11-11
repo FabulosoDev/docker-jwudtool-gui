@@ -6,10 +6,13 @@ const fs = require('fs');
 const filesize = require('filesize');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
+const { exec } = require('child_process');
 
 const PORT = 7878;
 const STATIC_FILES_PATH = process.env.DATA_DIRECTORY ?? './data';
 const COMMON_KEY = process.env.COMMON_KEY ?? '12345678901234567890123456789012';
+const PUID = process.env.PUID ?? '1000';
+const PGID = process.env.PGID ?? '100';
 
 const app = express();
 
@@ -103,6 +106,7 @@ async function jwudtool(filepath, command, res) {
     console.log(Buffer.from(data).toString());
   });
   jwudtoolProcess.on('close', function (code) {
+    exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
     console.log('Close: child process closed with code ' + code);
   });
 }
