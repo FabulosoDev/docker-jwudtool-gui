@@ -84,26 +84,30 @@ function get_games() {
     const files = fs.readdirSync(dir);
     files.forEach(function(file) {
       filepath = dir + '/' + file;
-      const stat = fs.statSync(filepath);
-      if (stat.isDirectory() && !is_nus_directory(filepath) && !is_decrypt_directory(filepath)) {
-        filelist = walkSync(filepath, filelist);
-      } else {
-        let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
-        let root = dirname.split("/", 1)[0];
-        if (!filelist[root]) {
-          filelist[root] = [];
+      try {
+        const stat = fs.statSync(filepath);
+        if (stat.isDirectory() && !is_nus_directory(filepath) && !is_decrypt_directory(filepath)) {
+          filelist = walkSync(filepath, filelist);
+        } else {
+          let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
+          let root = dirname.split("/", 1)[0];
+          if (!filelist[root]) {
+            filelist[root] = [];
+          }
+          filelist[root].push({
+            filepath: filepath,
+            cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
+            cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
+            cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
+            cmd_decrypt: (fs.statSync(filepath).isDirectory() && is_nus_directory(filepath)),
+            cmd_encrypt: (fs.statSync(filepath).isDirectory() && is_decrypt_directory(filepath)),
+            dir: dirname.replace(root + '/', ''),
+            name: path.basename(filepath),
+            size: filesize(stat.size)
+          });
         }
-        filelist[root].push({
-          filepath: filepath,
-          cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
-          cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
-          cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
-          cmd_decrypt: (fs.statSync(filepath).isDirectory() && is_nus_directory(filepath)),
-          cmd_encrypt: (fs.statSync(filepath).isDirectory() && is_decrypt_directory(filepath)),
-          dir: dirname.replace(root + '/', ''),
-          name: path.basename(filepath),
-          size: filesize(stat.size)
-        });
+      } catch (e) {
+        console.log(e);
       }
     });
     return filelist;
