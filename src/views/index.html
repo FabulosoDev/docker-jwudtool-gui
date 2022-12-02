@@ -48,6 +48,11 @@
 												<i class="fa-solid fa-unlock-keyhole"></i> DECRYPT
 											</button>
 											{{/cmd_decrypt}}
+											{{#cmd_encrypt}}
+											<button type="submit" formaction="/encrypt" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+												<i class="fa-solid fa-key"></i> ENCRYPT
+											</button>
+											{{/cmd_encrypt}}
 										</td>
 									</form>
 								</tr>

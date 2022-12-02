@@ -14,5 +14,6 @@ COPY --from=build /node /
 COPY src src
 COPY jwudtool jwudtool
 COPY jcdecrypt2 jcdecrypt2
+COPY nuspacker nuspacker
 
 CMD ["node", "src/app.js"]

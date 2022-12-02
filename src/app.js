@@ -36,16 +36,24 @@ app.get('/', function (req, res) {
   res.render('index', {"dirs": dirs});
 });
 app.post('/compress', function(req, res) {
-  jwudtool(req.body.filepath, '-compress', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -compress`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/decompress', function(req, res) {
-  jwudtool(req.body.filepath, '-decompress', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -decompress`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/extract', function(req, res) {
-  jwudtool(req.body.filepath, '-extract all', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -extract all`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/decrypt', function(req, res) {
-  jcdecrypt2(req.body.filepath, res);
+  const cmd = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} '${req.body.filepath}'`;
+  startProcess(cmd, req.body.filepath, res);
+});
+app.post('/encrypt', function(req, res) {
+  const cmd = `java -jar /nuspacker/NUSPacker.jar -encryptKeyWith ${COMMON_KEY} -in '${req.body.filepath}' -out '${req.body.filepath}'`;
+  startProcess(cmd, req.body.filepath, res);
 });
 
 app.listen(PORT, function () {
@@ -61,9 +69,14 @@ function flatten_games() {
   return flattend;
 }
 
-function contains_title_tik(filepath) {
+function is_nus_directory(filepath) {
   let files = fs.readdirSync(filepath);
   return files.indexOf('title.tik') !== -1;
+}
+
+function is_decrypt_directory(filepath) {
+  let files = fs.readdirSync(filepath);
+  return files.indexOf('code') !== -1 && files.indexOf('content') !== -1 && files.indexOf('meta') !== -1;
 }
 
 function get_games() {
@@ -71,25 +84,30 @@ function get_games() {
     const files = fs.readdirSync(dir);
     files.forEach(function(file) {
       filepath = dir + '/' + file;
-      const stat = fs.statSync(filepath);
-      if (stat.isDirectory() && !contains_title_tik(filepath)) {
-        filelist = walkSync(filepath, filelist);
-      } else {
-        let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
-        let root = dirname.split("/", 1)[0];
-        if (!filelist[root]) {
-          filelist[root] = [];
+      try {
+        const stat = fs.statSync(filepath);
+        if (stat.isDirectory() && !is_nus_directory(filepath) && !is_decrypt_directory(filepath)) {
+          filelist = walkSync(filepath, filelist);
+        } else {
+          let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
+          let root = dirname.split("/", 1)[0];
+          if (!filelist[root]) {
+            filelist[root] = [];
+          }
+          filelist[root].push({
+            filepath: filepath,
+            cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
+            cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
+            cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
+            cmd_decrypt: (fs.statSync(filepath).isDirectory() && is_nus_directory(filepath)),
+            cmd_encrypt: (fs.statSync(filepath).isDirectory() && is_decrypt_directory(filepath)),
+            dir: dirname.replace(root + '/', ''),
+            name: path.basename(filepath),
+            size: filesize(stat.size)
+          });
         }
-        filelist[root].push({
-          filepath: filepath,
-          cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
-          cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
-          cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
-          cmd_decrypt: (fs.statSync(filepath).isDirectory()),
-          dir: dirname.replace(root + '/', ''),
-          name: path.basename(filepath),
-          size: filesize(stat.size)
-        });
+      } catch (e) {
+        console.log(e);
       }
     });
     return filelist;
@@ -97,47 +115,23 @@ function get_games() {
   return walkSync(STATIC_FILES_PATH, {});
 }
 
-async function jwudtool(filepath, command, res) {
-  const jwudtool = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in ${filepath} ${command}`;
-  res.write(jwudtool);
-  console.log(jwudtool);
+async function startProcess(command, filepath, res) {
+  res.write(command);
+  console.log(command);
   
-  const jwudtoolProcess = spawn(jwudtool, {
+  const commandProcess = spawn(command, {
     detached: true,
     shell: true,
     stdout: 'inherit',
     stderr: 'inherit'
   });
-  jwudtoolProcess.stdout.on('data', function(data) {
+  commandProcess.stdout.on('data', function(data) {
     console.log(Buffer.from(data).toString());
   });
-  jwudtoolProcess.stderr.on('data', function(data) {
+  commandProcess.stderr.on('data', function(data) {
     console.log(Buffer.from(data).toString());
   });
-  jwudtoolProcess.on('close', function (code) {
-    exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
-    console.log('Close: child process closed with code ' + code);
-  });
-}
-
-async function jcdecrypt2(filepath, res) {
-  const jcdecrypt2 = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} ${filepath}`;
-  res.write(jcdecrypt2);
-  console.log(jcdecrypt2);
-  
-  const jcdecrypt2Process = spawn(jcdecrypt2, {
-    detached: true,
-    shell: true,
-    stdout: 'inherit',
-    stderr: 'inherit'
-  });
-  jcdecrypt2Process.stdout.on('data', function(data) {
-    console.log(Buffer.from(data).toString());
-  });
-  jcdecrypt2Process.stderr.on('data', function(data) {
-    console.log(Buffer.from(data).toString());
-  });
-  jcdecrypt2Process.on('close', function (code) {
+  commandProcess.on('close', function (code) {
     exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
     console.log('Close: child process closed with code ' + code);
   });
