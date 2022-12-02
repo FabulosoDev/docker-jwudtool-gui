@@ -36,16 +36,20 @@ app.get('/', function (req, res) {
   res.render('index', {"dirs": dirs});
 });
 app.post('/compress', function(req, res) {
-  jwudtool(req.body.filepath, '-compress', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -compress`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/decompress', function(req, res) {
-  jwudtool(req.body.filepath, '-decompress', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -decompress`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/extract', function(req, res) {
-  jwudtool(req.body.filepath, '-extract all', res);
+  const cmd = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in '${req.body.filepath}' -extract all`;
+  startProcess(cmd, req.body.filepath, res);
 });
 app.post('/decrypt', function(req, res) {
-  jcdecrypt2(req.body.filepath, res);
+  const cmd = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} '${req.body.filepath}'`;
+  startProcess(cmd, req.body.filepath, res);
 });
 
 app.listen(PORT, function () {
@@ -97,47 +101,23 @@ function get_games() {
   return walkSync(STATIC_FILES_PATH, {});
 }
 
-async function jwudtool(filepath, command, res) {
-  const jwudtool = `java -jar /jwudtool/JWUDTool-0.7.jar -commonKey ${COMMON_KEY} -in ${filepath} ${command}`;
-  res.write(jwudtool);
-  console.log(jwudtool);
+async function startProcess(command, filepath, res) {
+  res.write(command);
+  console.log(command);
   
-  const jwudtoolProcess = spawn(jwudtool, {
+  const commandProcess = spawn(command, {
     detached: true,
     shell: true,
     stdout: 'inherit',
     stderr: 'inherit'
   });
-  jwudtoolProcess.stdout.on('data', function(data) {
+  commandProcess.stdout.on('data', function(data) {
     console.log(Buffer.from(data).toString());
   });
-  jwudtoolProcess.stderr.on('data', function(data) {
+  commandProcess.stderr.on('data', function(data) {
     console.log(Buffer.from(data).toString());
   });
-  jwudtoolProcess.on('close', function (code) {
-    exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
-    console.log('Close: child process closed with code ' + code);
-  });
-}
-
-async function jcdecrypt2(filepath, res) {
-  const jcdecrypt2 = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} ${filepath}`;
-  res.write(jcdecrypt2);
-  console.log(jcdecrypt2);
-  
-  const jcdecrypt2Process = spawn(jcdecrypt2, {
-    detached: true,
-    shell: true,
-    stdout: 'inherit',
-    stderr: 'inherit'
-  });
-  jcdecrypt2Process.stdout.on('data', function(data) {
-    console.log(Buffer.from(data).toString());
-  });
-  jcdecrypt2Process.stderr.on('data', function(data) {
-    console.log(Buffer.from(data).toString());
-  });
-  jcdecrypt2Process.on('close', function (code) {
+  commandProcess.on('close', function (code) {
     exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
     console.log('Close: child process closed with code ' + code);
   });
