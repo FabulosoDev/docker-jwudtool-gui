@@ -43,6 +43,11 @@
 												<i class="fa-solid fa-box-open"></i> DECOMPRESS
 											</button>
 											{{/cmd_decompress}}
+											{{#cmd_decrypt}}
+											<button type="submit" formaction="/decrypt" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+												<i class="fa-solid fa-unlock-keyhole"></i> DECRYPT
+											</button>
+											{{/cmd_decrypt}}
 										</td>
 									</form>
 								</tr>

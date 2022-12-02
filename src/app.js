@@ -44,6 +44,9 @@ app.post('/decompress', function(req, res) {
 app.post('/extract', function(req, res) {
   jwudtool(req.body.filepath, '-extract all', res);
 });
+app.post('/decrypt', function(req, res) {
+  jcdecrypt2(req.body.filepath, res);
+});
 
 app.listen(PORT, function () {
   console.log(`JWUDTool GUI listening on port ${PORT} serving files from ${STATIC_FILES_PATH}`);
@@ -58,13 +61,18 @@ function flatten_games() {
   return flattend;
 }
 
+function contains_title_tik(filepath) {
+  let files = fs.readdirSync(filepath);
+  return files.indexOf('title.tik') !== -1;
+}
+
 function get_games() {
   const walkSync = function(dir, filelist) {
     const files = fs.readdirSync(dir);
     files.forEach(function(file) {
       filepath = dir + '/' + file;
       const stat = fs.statSync(filepath);
-      if (stat.isDirectory()) {
+      if (stat.isDirectory() && !contains_title_tik(filepath)) {
         filelist = walkSync(filepath, filelist);
       } else {
         let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
@@ -77,6 +85,7 @@ function get_games() {
           cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
           cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
           cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
+          cmd_decrypt: (fs.statSync(filepath).isDirectory()),
           dir: dirname.replace(root + '/', ''),
           name: path.basename(filepath),
           size: filesize(stat.size)
@@ -106,6 +115,29 @@ async function jwudtool(filepath, command, res) {
     console.log(Buffer.from(data).toString());
   });
   jwudtoolProcess.on('close', function (code) {
+    exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
+    console.log('Close: child process closed with code ' + code);
+  });
+}
+
+async function jcdecrypt2(filepath, res) {
+  const jcdecrypt2 = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} ${filepath}`;
+  res.write(jcdecrypt2);
+  console.log(jcdecrypt2);
+  
+  const jcdecrypt2Process = spawn(jcdecrypt2, {
+    detached: true,
+    shell: true,
+    stdout: 'inherit',
+    stderr: 'inherit'
+  });
+  jcdecrypt2Process.stdout.on('data', function(data) {
+    console.log(Buffer.from(data).toString());
+  });
+  jcdecrypt2Process.stderr.on('data', function(data) {
+    console.log(Buffer.from(data).toString());
+  });
+  jcdecrypt2Process.on('close', function (code) {
     exec(`chown -R ${parseInt(PUID)}:${parseInt(PGID)} ${path.dirname(filepath)}`);
     console.log('Close: child process closed with code ' + code);
   });
