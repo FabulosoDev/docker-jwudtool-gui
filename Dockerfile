@@ -8,10 +8,11 @@ RUN npm install
 
 FROM alpine:3.16
 
-RUN apk add --update nodejs openjdk8-jre
+RUN apk add --update nodejs openjdk11-jre
 
 COPY --from=build /node /
 COPY src src
 COPY jwudtool jwudtool
+COPY jcdecrypt2 jcdecrypt2
 
 CMD ["node", "src/app.js"]
