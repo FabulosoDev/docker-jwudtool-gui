@@ -51,6 +51,10 @@ app.post('/decrypt', function(req, res) {
   const cmd = `java -jar /jcdecrypt2/jcdecrypt2.jar ${COMMON_KEY} '${req.body.filepath}'`;
   startProcess(cmd, req.body.filepath, res);
 });
+app.post('/encrypt', function(req, res) {
+  const cmd = `java -jar /nuspacker/NUSPacker.jar -encryptKeyWith ${COMMON_KEY} -in '${req.body.filepath}'`;
+  startProcess(cmd, req.body.filepath, res);
+});
 
 app.listen(PORT, function () {
   console.log(`JWUDTool GUI listening on port ${PORT} serving files from ${STATIC_FILES_PATH}`);
@@ -65,9 +69,14 @@ function flatten_games() {
   return flattend;
 }
 
-function contains_title_tik(filepath) {
+function is_nus_directory(filepath) {
   let files = fs.readdirSync(filepath);
   return files.indexOf('title.tik') !== -1;
+}
+
+function is_decrypt_directory(filepath) {
+  let files = fs.readdirSync(filepath);
+  return files.indexOf('code') !== -1 && files.indexOf('content') !== -1 && files.indexOf('meta') !== -1;
 }
 
 function get_games() {
@@ -76,7 +85,7 @@ function get_games() {
     files.forEach(function(file) {
       filepath = dir + '/' + file;
       const stat = fs.statSync(filepath);
-      if (stat.isDirectory() && !contains_title_tik(filepath)) {
+      if (stat.isDirectory() && !is_nus_directory(filepath) && !is_decrypt_directory(filepath)) {
         filelist = walkSync(filepath, filelist);
       } else {
         let dirname = path.dirname(filepath).replace(STATIC_FILES_PATH + '/', '')
@@ -89,7 +98,8 @@ function get_games() {
           cmd_extract: (path.extname(file).toLowerCase() === '.wud' || path.extname(file).toLowerCase() === '.wux'),
           cmd_compress: (path.extname(file).toLowerCase() === '.wud'),
           cmd_decompress: (path.extname(file).toLowerCase() === '.wux'),
-          cmd_decrypt: (fs.statSync(filepath).isDirectory()),
+          cmd_decrypt: (fs.statSync(filepath).isDirectory() && is_nus_directory(filepath)),
+          cmd_encrypt: (fs.statSync(filepath).isDirectory() && is_decrypt_directory(filepath)),
           dir: dirname.replace(root + '/', ''),
           name: path.basename(filepath),
           size: filesize(stat.size)
