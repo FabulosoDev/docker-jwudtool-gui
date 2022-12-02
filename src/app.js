@@ -52,7 +52,7 @@ app.post('/decrypt', function(req, res) {
   startProcess(cmd, req.body.filepath, res);
 });
 app.post('/encrypt', function(req, res) {
-  const cmd = `java -jar /nuspacker/NUSPacker.jar -encryptKeyWith ${COMMON_KEY} -in '${req.body.filepath}'`;
+  const cmd = `java -jar /nuspacker/NUSPacker.jar -encryptKeyWith ${COMMON_KEY} -in '${req.body.filepath}' -out '${req.body.filepath}'`;
   startProcess(cmd, req.body.filepath, res);
 });
 
